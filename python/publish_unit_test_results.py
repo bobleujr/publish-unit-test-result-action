@@ -116,7 +116,7 @@ def main(settings: Settings, gha: GithubAction) -> None:
                     *Tests skipped*: {parsed.suite_skipped} \n
                     *Total tests*: {parsed.suite_tests + parsed.suite_errors + parsed.suite_skipped} \n
                 """)
-    if junit_parsed.errors or junit_parsed.suite_errors or junit_parsed.suite_failures:
+    if parsed.suite_errors:
         sys.exit(1)
     else:
         sys.exit(0)
