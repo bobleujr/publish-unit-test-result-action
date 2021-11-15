@@ -123,6 +123,7 @@ runs:
         # No code after this line since the script will exit with error codes under normal circumstances
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
+        WORKFLOW_NAME: ${{ inputs.workflow_name }}
         GITHUB_RETRIES: ${{ inputs.github_retries }}
         COMMIT: ${{ inputs.commit }}
         CHECK_NAME: ${{ inputs.check_name }}
