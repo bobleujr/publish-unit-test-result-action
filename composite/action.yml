@@ -6,6 +6,14 @@ inputs:
     description: 'GitHub API Access Token'
     default: ${{ github.token }}
     required: false
+  workflow_name:
+    description: 'Workflow name'
+    default: ${{ github.workflow }}
+    required: false
+  slack_webhook:
+    description: 'Webhook for slack'
+    default: ''
+    required: false
   github_retries:
     description: 'Requests to the GitHub API are retried this number of times. The value must be a positive integer or zero.'
     default: '10'
@@ -119,10 +127,11 @@ runs:
       shell: bash
 
     - name: Publish Unit Test Results
+      id: publish
       run: |
-        echo '##[group]Publish Unit Test Results'
-        python3 $GITHUB_ACTION_PATH/../python/publish_unit_test_results.py
-        echo '##[endgroup]'
+        echo "Publishing unit test results"
+        python3 $GITHUB_ACTION_PATH/../python/publish_unit_test_results.py > $GITHUB_ACTION_PATH/stdout.txt
+        # No code after this line since the script will exit with error codes under normal circumstances
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         GITHUB_RETRIES: ${{ inputs.github_retries }}
@@ -151,6 +160,40 @@ runs:
         ROOT_LOG_LEVEL: ${{ inputs.root_log_level }}
         LOG_LEVEL: ${{ inputs.log_level }}
       shell: bash
+
+    - name: Capturing payload
+      if: always()
+      run : |
+        if [[ -n "${{ inputs.slack_webhook }}" ]]
+        then
+            # print to verify if it's all good
+            echo "::debug::Python publish result is:"
+            echo "::debug::$(cat $GITHUB_ACTION_PATH/stdout.txt)"
+            echo "Collecting message ouput"
+            SLACK_MESSAGE=$(cat $GITHUB_ACTION_PATH/stdout.txt)
+            echo $SLACK_MESSAGE
+
+            if [[ -z "$SLACK_MESSAGE" ]]
+            then
+              SLACK_MESSAGE="No test summary was found"
+            fi
+
+            customPayload="{ attachments: [{ color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning', text: '$SLACK_MESSAGE', }] }"
+            
+            echo "Custom payload is $customPayload"
+            echo "CUSTOM_PAYLOAD=$(echo $customPayload)" >> $GITHUB_ENV
+        fi
+      shell: bash
+
+    - uses: bobleujr/action-slack@v3
+      with:
+        status: custom
+        fields: workflow,job,commit,repo,ref,author,took
+        custom_payload: ${{ env.CUSTOM_PAYLOAD }}          
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook }} # required
+      if: always() # Pick up events even if the job fails or is canceled.
+
 branding:
   icon: 'check-circle'
   color: 'green'

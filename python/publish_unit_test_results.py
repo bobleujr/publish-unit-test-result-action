@@ -3,10 +3,12 @@ import logging
 import os
 import re
 import time
+import sys
 from collections import defaultdict
 from datetime import datetime
 from glob import glob
 from typing import List, Optional, Union
+from xml.etree.ElementTree import parse
 
 import github
 from urllib3.util.retry import Retry
@@ -78,7 +80,9 @@ def main(settings: Settings, gha: GithubAction) -> None:
         logger.debug(f'reading {list(files)}')
 
     # get the unit test results
-    parsed = parse_junit_xml_files(files, settings.time_factor, settings.ignore_runs).with_commit(settings.commit)
+    junit_parsed = parse_junit_xml_files(files)
+    parsed = junit_parsed.with_commit(settings.commit)
+
     [gha.error(message=f'Error processing result file: {error.message}', file=error.file, line=error.line, column=error.column)
      for error in parsed.errors]
 
@@ -100,6 +104,22 @@ def main(settings: Settings, gha: GithubAction) -> None:
         gh._Github__requester._Requester__requestRaw
     )
     Publisher(settings, gh, gha).publish(stats, results.case_results, conclusion)
+
+    print(f"""
+                    Tests for Workflow {get_var('WORKFLOW_NAME', options)} \n
+                    *Repository*: [{settings.repo}](https://github.com/{settings.repo}) \n
+                    *Branch*: {get_var('GITHUB_REF', options)} \n
+                    *Commit*: [{settings.commit}](https://github.com/{settings.repo}/commit/{settings.commit}) \n \n
+
+                    *Tests succeeded*: {parsed.suite_tests} \n
+                    *Tests failed*: {parsed.suite_errors} \n
+                    *Tests skipped*: {parsed.suite_skipped} \n
+                    *Total tests*: {parsed.suite_tests + parsed.suite_errors + parsed.suite_skipped} \n
+                """)
+    if junit_parsed.errors or junit_parsed.suite_errors or junit_parsed.suite_failures:
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 
 def throttle_gh_request_raw(seconds_between_requests: float, seconds_between_writes: float, gh_request_raw):
@@ -318,11 +338,11 @@ def get_settings(options: dict, gha: Optional[GithubAction] = None) -> Settings:
 if __name__ == "__main__":
     options = dict(os.environ)
 
-    root_log_level = get_var('ROOT_LOG_LEVEL', options) or 'INFO'
+    root_log_level = 'CRITICAL'
     logging.root.level = logging.getLevelName(root_log_level)
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)5s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S %z')
 
-    log_level = get_var('LOG_LEVEL', options) or 'INFO'
+    log_level = 'CRITICAL'
     logger.level = logging.getLevelName(log_level)
     publish.logger.level = logging.getLevelName(log_level)
 
