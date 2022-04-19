@@ -559,10 +559,8 @@ def get_long_summary_md(stats: UnitTestRunResultsOrDeltaResults,
                  (['errors'] if get_magnitude(stats.tests_error) > 0 else [])
     details_on = details_on[0:-2] + [' and '.join(details_on[-2:])] if details_on else []
 
-    details_line = '\nFor more details on these {details_on}, see [this check]({url}).\n'.format(
-        details_on=', '.join(details_on),
-        url=details_url
-    )
+    details_line = '\nFor more details on these {details_on}, see the pipeline logs.\n'.format(
+        details_on=', '.join(details_on)    )
 
     test_changes_details = get_test_changes_summary_md(test_changes, test_list_changes_limit)
     test_changes_details = ('\n' + test_changes_details) if stats.tests and test_changes_details else ''
