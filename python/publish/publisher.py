@@ -53,6 +53,7 @@ class Settings:
     check_run_annotation: List[str]
     seconds_between_github_reads: float
     seconds_between_github_writes: float
+    service_name: str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -363,7 +364,7 @@ class Publisher:
                         cases: Optional[UnitTestCaseResults] = None) -> PullRequest:
         # compare them with earlier stats
         base_check_run = None
-        if self._settings.compare_earlier:
+        if False#self._settings.compare_earlier:
             base_commit_sha = self.get_base_commit_sha(pull_request)
             if stats.commit == base_commit_sha:
                 # we do not publish a comment when we compare the commit to itself
@@ -386,9 +387,9 @@ class Publisher:
         # reuse existing commend when comment_mode == comment_mode_update
         # if none exists or comment_mode != comment_mode_update, create new comment
         if self._settings.comment_mode != comment_mode_update or not self.reuse_comment(pull_request, summary, title):
-            service_name = os.getenv("workflow_name")
+            service_name = self._settings.service_name
             logger.info(f'workflow_name: {service_name}')
-            comment_val = f'## {title}\n### <{service_name}>\n{summary}\n### </{service_name}>'
+            comment_val = f'## {title}\n### >{service_name}\n{summary}\n### >/{service_name}'
             logger.info(f'comment_val: {comment_val}')
             comment = pull_request.create_issue_comment(comment_val)
             logger.info(f'created comment for pull request #{pull_request.number}: {comment.html_url}')
@@ -409,33 +410,34 @@ class Publisher:
         # edit last comment
         comment_id = comments[-1].get("databaseId")
         if ':recycle:' not in summary:
-            summary = f'{summary}\n:recycle: This comment has been updated with latest results at {datetime.now()}.'
+            summary = f'{summary}\n:recycle: This comment has been updated with latest results.'
 
         try:
             comment = pull.get_issue_comment(comment_id)
             
             content = comment.body
-            logger.info(f'content: {content}')
-            service_name = os.getenv("workflow_name")
-            logger.info(f'workflow_name: {service_name}')
+            self._gha.debug(f'content: {content}')
+            service_name = self._settings.service_name
+            self._gha.debug(f'workflow_name: {service_name}')
             
             if service_name in content:
                 part1 = content.split(f'### <{service_name}>')[0]
-                logger.info(f"part1 : {part1}")
+                self._gha.debug(f"part1 : {part1}")
                 part2 = content.split(f'### </{service_name}>')[1]
-                logger.info(f"part2 : {part2}")
+                self._gha.debug(f"part2 : {part2}")
                 
-                summary = f"{part1}### <{service_name}>\n{summary}\n### </{service_name}>{part2}"
+                summary = f"{part1}### >{service_name}\n{summary}\n### >/{service_name}{part2}"
                 
-                logger.info(f"new summary: {summary}")
+                self._gha.debug(f"new summary: {summary}")
+            
+            else:
+                summary = f"{content} \n ### >{service_name}\n{summary}\n### >/{service_name}"
                 
-            body = f'## {title}\n{summary}'
-            logger.info(f"body: {body}")
-
-            comment.edit(body)
-            logger.info(f'edited comment for pull request #{pull.number}: {comment.html_url}')
+            comment.edit(summary)
+            self._gha.debug(f'edited comment for pull request #{pull.number}: {comment.html_url}')
         except Exception as e:
             self._gha.warning(f'Failed to edit existing comment #{comment_id}')
+            self._gha.warning(f'Failed to edit existing comment #{e}')
             logger.debug('editing existing comment failed', exc_info=e)
 
         return True
