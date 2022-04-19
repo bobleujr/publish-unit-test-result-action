@@ -364,7 +364,7 @@ class Publisher:
                         cases: Optional[UnitTestCaseResults] = None) -> PullRequest:
         # compare them with earlier stats
         base_check_run = None
-        if False#self._settings.compare_earlier:
+        if False:#self._settings.compare_earlier:
             base_commit_sha = self.get_base_commit_sha(pull_request)
             if stats.commit == base_commit_sha:
                 # we do not publish a comment when we compare the commit to itself
