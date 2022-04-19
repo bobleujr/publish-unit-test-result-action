@@ -1,4 +1,5 @@
 import dataclasses
+from datetime import datetime
 import json
 import logging
 import os
@@ -381,17 +382,20 @@ class Publisher:
 
         details_url = check_run.html_url if check_run else None
         summary = get_long_summary_md(stats_with_delta, details_url, test_changes, self._settings.test_changes_limit)
-        body = f'## {title}\n{summary}'
-
+        
         # reuse existing commend when comment_mode == comment_mode_update
         # if none exists or comment_mode != comment_mode_update, create new comment
-        if self._settings.comment_mode != comment_mode_update or not self.reuse_comment(pull_request, body):
-            comment = pull_request.create_issue_comment(body)
+        if self._settings.comment_mode != comment_mode_update or not self.reuse_comment(pull_request, summary, title):
+            service_name = os.getenv("workflow_name")
+            logger.info(f'workflow_name: {service_name}')
+            comment_val = f'## {title}\n### <{service_name}>\n{summary}\n### </{service_name}>'
+            logger.info(f'comment_val: {comment_val}')
+            comment = pull_request.create_issue_comment(comment_val)
             logger.info(f'created comment for pull request #{pull_request.number}: {comment.html_url}')
 
         return pull_request
 
-    def reuse_comment(self, pull: PullRequest, body: str) -> bool:
+    def reuse_comment(self, pull: PullRequest, summary: str, title: str) -> bool:
         # get comments of this pull request
         comments = self.get_pull_request_comments(pull, order_by_updated=True)
 
@@ -404,11 +408,30 @@ class Publisher:
 
         # edit last comment
         comment_id = comments[-1].get("databaseId")
-        if ':recycle:' not in body:
-            body = f'{body}\n:recycle: This comment has been updated with latest results.'
+        if ':recycle:' not in summary:
+            summary = f'{summary}\n:recycle: This comment has been updated with latest results at {datetime.now()}.'
 
         try:
             comment = pull.get_issue_comment(comment_id)
+            
+            content = comment.body
+            logger.info(f'content: {content}')
+            service_name = os.getenv("workflow_name")
+            logger.info(f'workflow_name: {service_name}')
+            
+            if service_name in content:
+                part1 = content.split(f'### <{service_name}>')[0]
+                logger.info(f"part1 : {part1}")
+                part2 = content.split(f'### </{service_name}>')[1]
+                logger.info(f"part2 : {part2}")
+                
+                summary = f"{part1}### <{service_name}>\n{summary}\n### </{service_name}>{part2}"
+                
+                logger.info(f"new summary: {summary}")
+                
+            body = f'## {title}\n{summary}'
+            logger.info(f"body: {body}")
+
             comment.edit(body)
             logger.info(f'edited comment for pull request #{pull.number}: {comment.html_url}')
         except Exception as e:
