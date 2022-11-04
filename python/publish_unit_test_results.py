@@ -82,7 +82,10 @@ def main(settings: Settings, gha: GithubAction) -> None:
     # get the unit test results
     junit_parsed = parse_junit_xml_files(files)
     parsed = junit_parsed.with_commit(settings.commit)
-
+    
+    if settings.fail_early and parsed.suite_errors:
+        sys.exit(1)
+    
     [gha.error(message=f'Error processing result file: {error.message}', file=error.file, line=error.line, column=error.column)
      for error in parsed.errors]
 
