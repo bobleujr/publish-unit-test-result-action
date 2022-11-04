@@ -95,6 +95,9 @@ inputs:
   json_file:
     description: 'Results are written to this JSON file.'
     required: false
+  fail_early: 
+    required: false
+    default: 'false'
 runs:
   using: 'composite'
   steps:
