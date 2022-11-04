@@ -54,6 +54,7 @@ class Settings:
     seconds_between_github_reads: float
     seconds_between_github_writes: float
     service_name: str
+    fail_early: bool
 
 
 @dataclasses.dataclass(frozen=True)
