@@ -315,7 +315,8 @@ def get_settings(options: dict, gha: Optional[GithubAction] = None) -> Settings:
         check_run_annotation=annotations,
         seconds_between_github_reads=float(seconds_between_github_reads),
         seconds_between_github_writes=float(seconds_between_github_writes),
-        service_name=get_var('GITHUB_WORKFLOW', options)
+        service_name=get_var('GITHUB_WORKFLOW', options),
+        fail_early=os.getenv('FAIL_EARLY', false)
     )
 
     check_var(settings.token, 'GITHUB_TOKEN', 'GitHub token')
