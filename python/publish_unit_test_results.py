@@ -106,15 +106,15 @@ def main(settings: Settings, gha: GithubAction) -> None:
     Publisher(settings, gh, gha).publish(stats, results.case_results, conclusion)
 
     print(f"""
-                    Tests for Workflow {get_var('WORKFLOW_NAME', options)} \n
-                    *Repository*: [{settings.repo}](https://github.com/{settings.repo}) \n
-                    *Branch*: {get_var('GITHUB_REF', options)} \n
-                    *Commit*: [{settings.commit}](https://github.com/{settings.repo}/commit/{settings.commit}) \n \n
+    Tests for Workflow {get_var('WORKFLOW_NAME', options)} \n
+    *Repository*: [{settings.repo}](https://github.com/{settings.repo}) \n
+    *Branch*: {get_var('GITHUB_REF', options)} \n
+    *Commit*: [{settings.commit}](https://github.com/{settings.repo}/commit/{settings.commit}) \n \n
 
-                    *Tests succeeded*: {parsed.suite_tests} \n
-                    *Tests failed*: {parsed.suite_errors} \n
-                    *Tests skipped*: {parsed.suite_skipped} \n
-                    *Total tests*: {parsed.suite_tests + parsed.suite_errors + parsed.suite_skipped} \n
+    *Tests succeeded*: {parsed.suite_tests} \n
+    *Tests failed*: {parsed.suite_errors} \n
+    *Tests skipped*: {parsed.suite_skipped} \n
+    *Total tests*: {parsed.suite_tests + parsed.suite_errors + parsed.suite_skipped} \n
                 """)
     if parsed.suite_errors:
         sys.exit(1)
@@ -286,7 +286,6 @@ def get_settings(options: dict, gha: Optional[GithubAction] = None) -> Settings:
     check_var_condition(retries.isnumeric(), f'GITHUB_RETRIES must be a positive integer or 0: {retries}')
     check_var_condition(is_float(seconds_between_github_reads), f'SECONDS_BETWEEN_GITHUB_READS must be a positive number: {seconds_between_github_reads}')
     check_var_condition(is_float(seconds_between_github_writes), f'SECONDS_BETWEEN_GITHUB_WRITES must be a positive number: {seconds_between_github_writes}')
-
     settings = Settings(
         token=get_var('GITHUB_TOKEN', options),
         api_url=api_url,
@@ -315,7 +314,8 @@ def get_settings(options: dict, gha: Optional[GithubAction] = None) -> Settings:
         check_run_annotation=annotations,
         seconds_between_github_reads=float(seconds_between_github_reads),
         seconds_between_github_writes=float(seconds_between_github_writes),
-        service_name=get_var('GITHUB_WORKFLOW', options)
+        service_name=get_var('GITHUB_WORKFLOW', options),
+        code_coverage_files=get_files(get_var('CODE_COVERAGE_FILE', options) or '**/coverage.txt')
     )
 
     check_var(settings.token, 'GITHUB_TOKEN', 'GitHub token')

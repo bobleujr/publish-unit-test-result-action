@@ -95,6 +95,9 @@ inputs:
   json_file:
     description: 'Results are written to this JSON file.'
     required: false
+  code_coverage_file:
+    description: 'Code coverage file paths in glob format'
+    required: false
 runs:
   using: 'composite'
   steps:
@@ -160,6 +163,7 @@ runs:
         JSON_FILE: ${{ inputs.json_file }}
         ROOT_LOG_LEVEL: ${{ inputs.root_log_level }}
         LOG_LEVEL: ${{ inputs.log_level }}
+        CODE_COVERAGE_FILE: ${{ inputs.code_coverage_file }}
       shell: bash
 
     - name: Capturing payload
@@ -179,10 +183,12 @@ runs:
               SLACK_MESSAGE="No test summary was found"
             fi
 
-            customPayload="{ attachments: [{ color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning', text: '$SLACK_MESSAGE', }] }"
+            #customPayload="{ attachments: [{ color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning', text: '$SLACK_MESSAGE', }] }"
             
-            echo "Custom payload is $customPayload"
-            echo "CUSTOM_PAYLOAD=$(echo $customPayload)" >> $GITHUB_ENV
+            #echo "Custom payload is $customPayload"
+            #echo "CUSTOM_PAYLOAD=$(echo $customPayload)" >> $GITHUB_ENV
+            echo '### Test summary' >> $GITHUB_STEP_SUMMARY
+            echo "$SLACK_MESSAGE" >> $GITHUB_STEP_SUMMARY
         fi
       shell: bash
 

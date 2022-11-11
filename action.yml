@@ -87,6 +87,10 @@ inputs:
   json_file:
     description: 'Results are written to this JSON file.'
     required: false
+  code_coverage_file:
+    description: 'Path to code coverage file'
+    default: ''
+    required: false
 runs:
   using: 'docker'
   image: 'docker://ghcr.io/enricomi/publish-unit-test-result-action:v1.31'

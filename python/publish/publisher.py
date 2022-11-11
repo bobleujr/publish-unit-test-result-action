@@ -54,6 +54,7 @@ class Settings:
     seconds_between_github_reads: float
     seconds_between_github_writes: float
     service_name: str
+    code_coverage_files: List[str]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -383,20 +384,34 @@ class Publisher:
 
         details_url = check_run.html_url if check_run else None
         summary = get_long_summary_md(stats_with_delta, details_url, test_changes, self._settings.test_changes_limit)
-        
+
+        # Add code coverage to comment
+        code_coverage = f"No code coverage report"
+
+        try:
+            with open(self._settings.code_coverage_files[0], 'r') as file:
+                code_coverage = str(file.read())
+                # line_break = "\n"
+                # code_coverage = code_coverage.replace("\n", line_break)
+        except Exception as e:
+            pass
+
         # reuse existing commend when comment_mode == comment_mode_update
         # if none exists or comment_mode != comment_mode_update, create new comment
-        if self._settings.comment_mode != comment_mode_update or not self.reuse_comment(pull_request, summary, title):
+        if self._settings.comment_mode != comment_mode_update or not self.reuse_comment(pull_request, summary, title,
+                                                                                        code_coverage):
             service_name = self._settings.service_name
             logger.info(f'workflow_name: {service_name}')
-            comment_val = f'## {title}\n### {service_name}\n{summary}\n### /{service_name}'
+            comment_val = f'## {title}\n### {service_name}\n{summary}\n' \
+                          f'\n```{code_coverage}```\n' \
+                          f'### /{service_name}'
             logger.info(f'comment_val: {comment_val}')
             comment = pull_request.create_issue_comment(comment_val)
             logger.info(f'created comment for pull request #{pull_request.number}: {comment.html_url}')
 
         return pull_request
 
-    def reuse_comment(self, pull: PullRequest, summary: str, title: str) -> bool:
+    def reuse_comment(self, pull: PullRequest, summary: str, title: str, code_coverage: str) -> bool:
         # get comments of this pull request
         comments = self.get_pull_request_comments(pull, order_by_updated=True)
 
@@ -420,19 +435,21 @@ class Publisher:
             self._gha.debug(f'content: {content}')
             service_name = self._settings.service_name
             self._gha.debug(f'workflow_name: {service_name}')
-            
+
             if service_name in content:
                 part1 = content.split(f'### {service_name}')[0]
                 self._gha.debug(f"part1 : {part1}")
                 part2 = content.split(f'### /{service_name}')[1]
                 self._gha.debug(f"part2 : {part2}")
                 
-                summary = f"{part1}### {service_name}\n{summary}\n### /{service_name}{part2}"
+                summary = f"{part1}### {service_name}\n{summary}\n"
+                summary += f"\n```{code_coverage}```\n"
+                summary += f"### /{service_name}{part2}"
                 
                 self._gha.debug(f"new summary: {summary}")
             
             else:
-                summary = f"{content} \n ### {service_name}\n{summary}\n### /{service_name}"
+                summary = f"{content} \n ### {service_name}\n{summary}\n\n```{code_coverage}```\n### /{service_name}"
                 
             comment.edit(summary)
             self._gha.debug(f'edited comment for pull request #{pull.number}: {comment.html_url}')
