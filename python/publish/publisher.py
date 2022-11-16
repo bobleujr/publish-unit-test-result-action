@@ -432,27 +432,27 @@ class Publisher:
             if ':recycle:' not in content:
                 content = f'{content}\n:recycle: This comment has been updated with latest results.'
 
-            self._gha.debug(f'content: {content}')
+            # self._gha.debug(f'content: {content}')
             service_name = self._settings.service_name
-            self._gha.debug(f'workflow_name: {service_name}')
+            # self._gha.debug(f'workflow_name: {service_name}')
 
             if service_name in content:
                 part1 = content.split(f'### {service_name}')[0]
-                self._gha.debug(f"part1 : {part1}")
+                # self._gha.debug(f"part1 : {part1}")
                 part2 = content.split(f'### /{service_name}')[1]
-                self._gha.debug(f"part2 : {part2}")
+                # self._gha.debug(f"part2 : {part2}")
                 
                 summary = f"{part1}### {service_name}\n{summary}\n"
                 summary += f"\n```{code_coverage}```\n"
                 summary += f"### /{service_name}{part2}"
                 
-                self._gha.debug(f"new summary: {summary}")
+                # self._gha.debug(f"new summary: {summary}")
             
             else:
                 summary = f"{content} \n ### {service_name}\n{summary}\n\n```{code_coverage}```\n### /{service_name}"
                 
             comment.edit(summary)
-            self._gha.debug(f'edited comment for pull request #{pull.number}: {comment.html_url}')
+            # self._gha.debug(f'edited comment for pull request #{pull.number}: {comment.html_url}')
         except Exception as e:
             self._gha.warning(f'Failed to edit existing comment #{comment_id}')
             self._gha.warning(f'Failed to edit existing comment #{e}')
