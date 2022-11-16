@@ -306,7 +306,7 @@ class Publisher:
                     pass
 
         # provide a reduced version to Github actions
-        self._gha.set_output('json', json.dumps(data.reduced(), ensure_ascii=False))
+        # self._gha.set_output('json', json.dumps(data.reduced(), ensure_ascii=False))
 
     @staticmethod
     def get_test_lists_from_check_run(check_run: Optional[CheckRun]) -> Tuple[Optional[List[str]], Optional[List[str]]]:
