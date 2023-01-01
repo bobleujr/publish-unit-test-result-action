@@ -272,25 +272,26 @@ class Publisher:
         summary_with_digest = get_long_summary_with_digest_md(stats_with_delta, stats)
         all_annotations = [annotation.to_dict() for annotation in all_annotations]
         all_annotations = [all_annotations[x:x+50] for x in range(0, len(all_annotations), 50)] or [[]]
-        for annotations in all_annotations:
-            output = dict(
-                title=title,
-                summary=summary_with_digest,
-                annotations=annotations
-            )
+        # commenting this due to the random behavior
+        # for annotations in all_annotations:
+        #     output = dict(
+        #         title=title,
+        #         summary=summary_with_digest,
+        #         annotations=annotations
+        #     )
 
-            if check_run is None:
-                logger.debug(f'creating check with {len(annotations)} annotations')
-                check_run = self._repo.create_check_run(name=self._settings.check_name,
-                                                        head_sha=self._settings.commit,
-                                                        status='completed',
-                                                        conclusion=conclusion,
-                                                        output=output)
-                logger.info(f'created check {check_run.html_url}')
-            else:
-                logger.debug(f'updating check with {len(annotations)} more annotations')
-                check_run.edit(output=output)
-                logger.debug(f'updated check')
+        #     if check_run is None:
+        #         logger.debug(f'creating check with {len(annotations)} annotations')
+        #         check_run = self._repo.create_check_run(name=self._settings.check_name,
+        #                                                 head_sha=self._settings.commit,
+        #                                                 status='completed',
+        #                                                 conclusion=conclusion,
+        #                                                 output=output)
+        #         logger.info(f'created check {check_run.html_url}')
+        #     else:
+        #         logger.debug(f'updating check with {len(annotations)} more annotations')
+        #         check_run.edit(output=output)
+        #         logger.debug(f'updated check')
         return check_run
 
     def publish_json(self, data: PublishData):
