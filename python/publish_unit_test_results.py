@@ -105,17 +105,15 @@ def main(settings: Settings, gha: GithubAction) -> None:
     )
     Publisher(settings, gh, gha).publish(stats, results.case_results, conclusion)
 
-    print(f"""
-    Tests for Workflow {get_var('WORKFLOW_NAME', options)} \n
-    *Repository*: [{settings.repo}](https://github.com/{settings.repo}) \n
-    *Branch*: {get_var('GITHUB_REF', options)} \n
-    *Commit*: [{settings.commit}](https://github.com/{settings.repo}/commit/{settings.commit}) \n \n
+    print(f"""Tests for Workflow {get_var('WORKFLOW_NAME', options)} \n
+*Repository*: [{settings.repo}](https://github.com/{settings.repo}) \n
+*Branch*: {get_var('GITHUB_REF', options)} \n
+*Commit*: [{settings.commit}](https://github.com/{settings.repo}/commit/{settings.commit}) \n \n
 
-    *Tests succeeded*: {parsed.suite_tests} \n
-    *Tests failed*: {parsed.suite_errors} \n
-    *Tests skipped*: {parsed.suite_skipped} \n
-    *Total tests*: {parsed.suite_tests + parsed.suite_errors + parsed.suite_skipped} \n
-                """)
+*Tests succeeded*: {parsed.suite_tests} \n
+*Tests failed*: {parsed.suite_errors} \n
+*Tests skipped*: {parsed.suite_skipped} \n
+*Total tests*: {parsed.suite_tests + parsed.suite_errors + parsed.suite_skipped} \n""")
     if parsed.suite_errors:
         sys.exit(1)
     else:
